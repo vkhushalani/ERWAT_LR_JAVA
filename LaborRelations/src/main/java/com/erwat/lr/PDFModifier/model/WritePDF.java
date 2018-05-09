@@ -10,7 +10,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "\"com.nga.erwat.lr.v1.db::Table.PDFBuilder\"", schema = "ERWAT_LR_SCHEMA")
+@Table(name = "\"com.nga.erwat.lr.v1.db::Table.LRD_PDF_BUILDER\"", schema = "ERWAT_LR_SCHEMA")
 @NamedQueries({
     @NamedQuery(name = "WritePDF.findAll", query = "SELECT wp FROM WritePDF wp"),
     @NamedQuery(name = "WritePDF.findByPageNoOfDoc", query = "SELECT wp FROM WritePDF wp WHERE wp.pageNo = :pageNo AND wp.docName = :dname"),
@@ -22,8 +22,6 @@ public class WritePDF {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "\"ID\"", columnDefinition = "INTEGER")
 	private Integer id;
-
-	private String variableValue;
 	
 	@Column(name = "\"PAGE_NO\"",columnDefinition = "INTEGER")
 	private Integer pageNo; 
@@ -54,13 +52,6 @@ public class WritePDF {
 		this.id = id;
 	}
 
-	public String getVariableValue() {
-		return variableValue;
-	}
-
-	public void setVariableValue(String variableValue) {
-		this.variableValue = variableValue;
-	}
 
 	public Integer getPageNo() {
 		return pageNo;

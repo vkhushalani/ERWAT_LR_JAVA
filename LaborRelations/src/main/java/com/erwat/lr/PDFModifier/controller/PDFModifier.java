@@ -2,7 +2,11 @@ package com.erwat.lr.PDFModifier.controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.erwat.lr.PDFModifier.Extension.GetPhraseAndLocation;
+import com.erwat.lr.PDFModifier.model.PDFValues;
+import com.erwat.lr.PDFModifier.model.PDFValuesMap;
 import com.erwat.lr.PDFModifier.model.WritePDF;
+import com.erwat.lr.PDFModifier.service.PDFValuesMapService;
+import com.erwat.lr.PDFModifier.service.PDFValuesService;
 import com.erwat.lr.PDFModifier.service.WritePDFService;
 
 import java.awt.print.PrinterException;
@@ -31,20 +35,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
-@RequestMapping("/PDFModifier")
+@RequestMapping("/PDFBuilder")
 public class PDFModifier {
 	
 	Logger logger = LoggerFactory.getLogger(PDFModifier.class);
 	 @Autowired
 	 WritePDFService writePDFService;
 	 
-	@GetMapping("/get/{filename}")
-	public ResponseEntity<?> modifyPDF(@PathVariable("filename") String fName,HttpServletResponse response) throws InvalidPasswordException, IOException, PrinterException{
+	 @Autowired
+	 PDFValuesMapService pdfValuesMapService;
+	 
+	 @Autowired
+	 PDFValuesService pdfValuesService;
+	 
+	@PostMapping("/generate/{filename}")
+	public ResponseEntity<?> modifyPDF(@PathVariable("filename") String fName,HttpServletResponse response,@RequestBody List<PDFValues> pdfDataList) throws InvalidPasswordException, IOException, PrinterException{
 		
 		ByteArrayOutputStream out = null;
 		
@@ -95,7 +106,12 @@ public class PDFModifier {
 				//Writing text on the pdf 
 				contentStream.beginText();
 				contentStream.newLineAtOffset(xOffset,yOffset); // coordinates of the new text
-				contentStream.showText(item.getVariableValue()); // currently writing variable later change to the value of variable from object
+				
+				List<PDFValuesMap> mapList = pdfValuesMapService.findByPDFId(item.getId());
+				PDFValues pdfValue = pdfValuesService.findById(mapList.get(0).getValueID());
+				String sText =  getShowTextForPDF(pdfDataList,pdfValue);
+				
+				contentStream.showText(sText); 
 				contentStream.endText();
 				contentStream.close(); 
 				}
@@ -122,6 +138,26 @@ public class PDFModifier {
 
 		return ResponseEntity.ok().body("Success");
 	 }
+
+	private String getShowTextForPDF(List<PDFValues> pdfDataList, PDFValues pdfValue) {
+//		if(pdfValue.getDefaultFlag())
+//		{
+//			return pdfValue.getValue();
+//		}
+//		else
+//		{
+			for(int j=0;j<pdfDataList.size();j++)
+			{
+				PDFValues pdfData = pdfDataList.get(j);
+				if(pdfData.getId().equalsIgnoreCase(pdfValue.getId()))
+					{
+						return pdfData.getValue();
+						
+					}
+			}
+//		}
+		return "";
+	}
 
 	private List<Float[]> getWordLocation(WritePDF item, PDDocument file) throws IOException {
 		PDDocument document = null;
