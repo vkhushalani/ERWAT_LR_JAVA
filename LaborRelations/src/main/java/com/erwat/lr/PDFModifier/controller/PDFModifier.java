@@ -2,11 +2,11 @@ package com.erwat.lr.PDFModifier.controller;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.erwat.lr.PDFModifier.Extension.GetPhraseAndLocation;
-import com.erwat.lr.PDFModifier.model.PDFValues;
-import com.erwat.lr.PDFModifier.model.PDFValuesMap;
+import com.erwat.lr.PDFModifier.model.PDFLabels;
+import com.erwat.lr.PDFModifier.model.PDFLabelsMap;
 import com.erwat.lr.PDFModifier.model.WritePDF;
-import com.erwat.lr.PDFModifier.service.PDFValuesMapService;
-import com.erwat.lr.PDFModifier.service.PDFValuesService;
+import com.erwat.lr.PDFModifier.service.PDFLabelsMapService;
+import com.erwat.lr.PDFModifier.service.PDFLabelsService;
 import com.erwat.lr.PDFModifier.service.WritePDFService;
 
 import java.awt.print.PrinterException;
@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -31,10 +32,12 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,13 +52,39 @@ public class PDFModifier {
 	 WritePDFService writePDFService;
 	 
 	 @Autowired
-	 PDFValuesMapService pdfValuesMapService;
+	 PDFLabelsMapService pdfLabelsMapService;
 	 
 	 @Autowired
-	 PDFValuesService pdfValuesService;
+	 PDFLabelsService pdfLabelsService;
 	 
+	 @GetMapping("/values/{filename}")
+		public ResponseEntity<?> getAllDefaultValues(@PathVariable("filename") String fName) {
+		 List<PDFLabelsMap> values = new ArrayList<PDFLabelsMap>();	
+		 List<WritePDF> docValues = writePDFService.findByDocName(fName);
+		 	for(WritePDF docValue : docValues)
+		 	{
+		 		List<PDFLabelsMap> mapValues =  pdfLabelsMapService.findByPDFId(docValue.getId());
+		 		values.addAll(mapValues);
+		 		
+		 	}
+		 	JSONObject robj =  new JSONObject();
+		 	for(PDFLabelsMap value :values)
+		 	{
+		 		JSONObject vobj = new JSONObject();
+		 		vobj.put("value", value.getValue());
+		 		vobj.put("defaultFlag", value.getDefaultFlag());
+		 		PDFLabels label = pdfLabelsService.findById(value.getLabelID());
+		 		vobj.put("label", label.getSearchLabel());
+		 		vobj.put("placeholder", label.getPlaceholder());
+		 		robj.put(value.getLabelID(), vobj);
+		 		
+		 	}
+		 	
+			return ResponseEntity.ok().body(robj.toString());
+			
+		}
 	@PostMapping("/generate/{filename}")
-	public ResponseEntity<?> modifyPDF(@PathVariable("filename") String fName,HttpServletResponse response,@RequestBody List<PDFValues> pdfDataList) throws InvalidPasswordException, IOException, PrinterException{
+	public ResponseEntity<?> modifyPDF(@PathVariable("filename") String fName,HttpServletResponse response,@RequestBody JSONObject inputObject) throws InvalidPasswordException, IOException, PrinterException{
 		
 		ByteArrayOutputStream out = null;
 		
@@ -68,26 +97,27 @@ public class PDFModifier {
 		
 		PDPageTree pages = document.getPages();
 		PDPage page;
-		List<WritePDF> items;
+		WritePDF wPDF;
 		//loop the pages 
 		for (int i=0;i< document.getNumberOfPages();i++)
 		{	
 			page = pages.get(i);
-			items = writePDFService.findByPageNoOfDoc(i+1,fName);
-			
+			wPDF = writePDFService.findByPageNoOfDoc(i+1,fName);
+			List<PDFLabelsMap> items = pdfLabelsMapService.findByPDFId(wPDF.getId());
 			
 			// loop for all the pdf form labels per page
-			for(WritePDF item :items){
+			for(PDFLabelsMap item :items){
 				float xOffset = 0;
 				float yOffset = 0;
 				
+				PDFLabels label = pdfLabelsService.findById(item.getLabelID());
 				// search the coordinates of the identifier and than accordingly determine coordinates of the new text 
-				List<Float[]> coordinates = getWordLocation(item,document);
+				List<Float[]> coordinates = getWordLocation(wPDF.getPageNo(),document,label.getSearchLabel(),item.getSearchLabelIndex());
 				//Calculating the xOffset and yOffset using item xShift and yShift Values
 				if(coordinates.size() != 0){
 				if(item.getRelativeDir().equalsIgnoreCase("R")){
-				xOffset = coordinates.get(item.getSearchLabel().length())[0] + item.getXShift();
-				yOffset = coordinates.get(item.getSearchLabel().length())[1] + item.getYShift();
+				xOffset = coordinates.get(label.getSearchLabel().length())[0] + item.getXShift();
+				yOffset = coordinates.get(label.getSearchLabel().length())[1] + item.getYShift();
 				}
 				else
 				{ logger.debug("coordinates else");
@@ -106,11 +136,14 @@ public class PDFModifier {
 				//Writing text on the pdf 
 				contentStream.beginText();
 				contentStream.newLineAtOffset(xOffset,yOffset); // coordinates of the new text
-				
-				List<PDFValuesMap> mapList = pdfValuesMapService.findByPDFId(item.getId());
-				PDFValues pdfValue = pdfValuesService.findById(mapList.get(0).getValueID());
-				String sText =  getShowTextForPDF(pdfDataList,pdfValue);
-				
+				JSONObject valueObject = inputObject.getJSONObject(label.getId());
+				String sText = "";
+				if(!item.getDefaultFlag()){
+				 sText = (String) valueObject.getString("value");}
+				else
+				{
+					sText = item.getValue();
+				}
 				contentStream.showText(sText); 
 				contentStream.endText();
 				contentStream.close(); 
@@ -139,27 +172,9 @@ public class PDFModifier {
 		return ResponseEntity.ok().body("Success");
 	 }
 
-	private String getShowTextForPDF(List<PDFValues> pdfDataList, PDFValues pdfValue) {
-//		if(pdfValue.getDefaultFlag())
-//		{
-//			return pdfValue.getValue();
-//		}
-//		else
-//		{
-			for(int j=0;j<pdfDataList.size();j++)
-			{
-				PDFValues pdfData = pdfDataList.get(j);
-				if(pdfData.getId().equalsIgnoreCase(pdfValue.getId()))
-					{
-						return pdfData.getValue();
-						
-					}
-			}
-//		}
-		return "";
-	}
+	
 
-	private List<Float[]> getWordLocation(WritePDF item, PDDocument file) throws IOException {
+	private List<Float[]> getWordLocation(Integer pageNo, PDDocument file,String searchLabel, Integer indexValue) throws IOException {
 		PDDocument document = null;
 		List<TextPosition> locations = null;
 		try {
@@ -167,8 +182,8 @@ public class PDFModifier {
 			PDFTextStripper stripper = new GetPhraseAndLocation();
             document = file;
             stripper.setSortByPosition(true);
-            stripper.setStartPage(item.getPageNo());
-            stripper.setEndPage(item.getPageNo());
+            stripper.setStartPage(pageNo);
+            stripper.setEndPage(pageNo);
  
             Writer dummy = new OutputStreamWriter(new ByteArrayOutputStream());
             stripper.writeText(document, dummy);
@@ -178,8 +193,8 @@ public class PDFModifier {
         	
             
         }
-		String searchString = item.getSearchLabel();
-		int labelIndex = item.getSearchLabelIndex().intValue();
+		String searchString = searchLabel;
+		int labelIndex = indexValue.intValue();
 		List<Float[]> coordinates = new ArrayList<Float[]>();
 		int j=0,index = 0;
 		if(locations !=null){

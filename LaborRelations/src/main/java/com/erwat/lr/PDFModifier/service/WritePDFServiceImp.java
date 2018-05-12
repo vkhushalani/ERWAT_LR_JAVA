@@ -47,15 +47,15 @@ public class WritePDFServiceImp implements WritePDFService {
         return item;
 	}
 
-	@SuppressWarnings("unchecked")
+
 	@Override
-	public List<WritePDF> findByPageNoOfDoc(Integer pageNo, String docName) {
+	public WritePDF findByPageNoOfDoc(Integer pageNo, String docName) {
 		Query query = em.createNamedQuery("WritePDF.findByPageNoOfDoc")
 						.setParameter("pageNo", pageNo)
 						.setParameter("dname", docName);
-		 List<WritePDF> items = query.getResultList();
+		 WritePDF item = (WritePDF) query.getSingleResult();
 
-	        return items;
+	        return item;
 	}
 
 	@Override
@@ -70,6 +70,16 @@ public class WritePDFServiceImp implements WritePDFService {
 	public void deleteByObject(WritePDF pdf) {
 		em.remove(pdf);
 
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public List<WritePDF> findByDocName(String docName) {
+		Query query = em.createNamedQuery("WritePDF.findByDocName")
+				.setParameter("dname", docName);
+		List<WritePDF> items = query.getResultList();
+
+		return items;
 	}
 
 }

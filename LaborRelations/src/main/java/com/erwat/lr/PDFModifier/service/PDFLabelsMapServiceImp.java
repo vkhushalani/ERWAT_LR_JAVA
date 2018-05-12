@@ -9,28 +9,28 @@ import javax.persistence.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.erwat.lr.PDFModifier.model.PDFValuesMap;
+import com.erwat.lr.PDFModifier.model.PDFLabelsMap;
 
 
 @Transactional
 @Component
-public class PDFValuesMapServiceImp implements PDFValuesMapService {
+public class PDFLabelsMapServiceImp implements PDFLabelsMapService {
 
 	@PersistenceContext
 	 EntityManager em;
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<PDFValuesMap> findAll() {
-		Query query = em.createNamedQuery("PDFValuesMap.findAll");
-		 List<PDFValuesMap> items = query.getResultList();
+	public List<PDFLabelsMap> findAll() {
+		Query query = em.createNamedQuery("PDFLabelsMap.findAll");
+		 List<PDFLabelsMap> items = query.getResultList();
 	        return items;
 	
 	}
 
 	@Override
 	@Transactional
-	public PDFValuesMap create(PDFValuesMap item) {
+	public PDFLabelsMap create(PDFLabelsMap item) {
 		 em.persist(item);
 //       em.getTransaction().commit();
        return item;
@@ -38,44 +38,44 @@ public class PDFValuesMapServiceImp implements PDFValuesMapService {
 
 	@Override
 	@Transactional
-	public PDFValuesMap update(PDFValuesMap item) {
+	public PDFLabelsMap update(PDFLabelsMap item) {
 		  em.merge(item);
 //        em.getTransaction().commit();
         return item;
 	}
 
 	@Override
-	public PDFValuesMap findById(Integer pdfID, String valueID) {
-		Query query = em.createNamedQuery("PDFValuesMap.findById")
+	public PDFLabelsMap findById(Integer pdfID, String labelID) {
+		Query query = em.createNamedQuery("PDFLabelsMap.findById")
 				.setParameter("pdfID",pdfID)
-				.setParameter("valueID",valueID);
-		PDFValuesMap item = (PDFValuesMap) query.getSingleResult();
+				.setParameter("labelID",labelID);
+		PDFLabelsMap item = (PDFLabelsMap) query.getSingleResult();
 
 		return item;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<PDFValuesMap> findByValueId(String valueID) {
-		Query query = em.createNamedQuery("PDFValuesMap.findByValueId")
-				.setParameter("valueID",valueID);
-		List<PDFValuesMap> items = query.getResultList();
+	public List<PDFLabelsMap> findByLabelId(String labelID) {
+		Query query = em.createNamedQuery("PDFLabelsMap.findByLabelId")
+				.setParameter("labelID",labelID);
+		List<PDFLabelsMap> items = query.getResultList();
 		return items;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public List<PDFValuesMap> findByPDFId(Integer pdfID) {
-		Query query = em.createNamedQuery("PDFValuesMap.findByPDFId")
+	public List<PDFLabelsMap> findByPDFId(Integer pdfID) {
+		Query query = em.createNamedQuery("PDFLabelsMap.findByPDFId")
 				.setParameter("pdfID",pdfID);
-		List<PDFValuesMap> items = query.getResultList();
+		List<PDFLabelsMap> items = query.getResultList();
 		return items;
 	}
 
 	@Override
 	@Transactional
 	public void deleteById(Integer pdfID, String valueID) {
-		PDFValuesMap item = findById(pdfID,valueID);
+		PDFLabelsMap item = findById(pdfID,valueID);
 		em.remove(item);
 
 	}

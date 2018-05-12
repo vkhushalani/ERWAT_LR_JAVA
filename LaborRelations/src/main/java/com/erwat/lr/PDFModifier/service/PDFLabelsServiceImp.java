@@ -9,54 +9,54 @@ import javax.persistence.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.erwat.lr.PDFModifier.model.PDFValues;
+import com.erwat.lr.PDFModifier.model.PDFLabels;
 
 @Transactional
 @Component
-public class PDFValuesServiceImp implements PDFValuesService {
+public class PDFLabelsServiceImp implements PDFLabelsService {
 
 	@PersistenceContext
 	 EntityManager em;
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<PDFValues> findAll() {
-		Query query = em.createNamedQuery("PDFValues.findAll");
-		 List<PDFValues> items = query.getResultList();
+	public List<PDFLabels> findAll() {
+		Query query = em.createNamedQuery("PDFLabels.findAll");
+		 List<PDFLabels> items = query.getResultList();
 	        return items;
 	}
 
 	@Override
 	@Transactional
-	public PDFValues update(PDFValues pdfvalues) {
-		em.merge(pdfvalues);
-		 return pdfvalues;
+	public PDFLabels update(PDFLabels pdflabels) {
+		em.merge(pdflabels);
+		 return pdflabels;
 	}
 
 	@Override
 	@Transactional
-	public PDFValues create(PDFValues pdfvalues) {
-		em.persist(pdfvalues);
-		 return pdfvalues;
+	public PDFLabels create(PDFLabels pdflabels) {
+		em.persist(pdflabels);
+		 return pdflabels;
 	}
 
 	@Override
-	public PDFValues findById(String id) {
-		PDFValues item = em.find(PDFValues.class, id);
+	public PDFLabels findById(String id) {
+		PDFLabels item = em.find(PDFLabels.class, id);
         return item;
 	}
 
 	@Override
 	public void deleteById(String id) {
-		PDFValues item = em.find(PDFValues.class, id);
+		PDFLabels item = em.find(PDFLabels.class, id);
 		em.remove(item);
 
 	}
 
 	@Override
 	@Transactional
-	public void deleteByObject(PDFValues pdfvalues) {
-		em.remove(pdfvalues);
+	public void deleteByObject(PDFLabels pdflabels) {
+		em.remove(pdflabels);
 
 	}
 
