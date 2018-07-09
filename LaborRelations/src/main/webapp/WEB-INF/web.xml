@@ -12,6 +12,10 @@
 	   <res-ref-name>EcmService</res-ref-name>
 	   <res-type>com.sap.ecm.api.EcmService</res-type>
 	</resource-ref>
+	<resource-ref>
+	   <res-ref-name>connectivityConfiguration</res-ref-name>
+	   <res-type>com.sap.core.connectivity.api.configuration.ConnectivityConfiguration</res-type>
+	</resource-ref>
 	   <security-constraint>
 	    <web-resource-collection>
 	      <web-resource-name>Table Maint Services</web-resource-name>
