@@ -29,6 +29,9 @@ public class PDFPagesPositionsMap {
 	
 	@Column(name = "\"WRITE_OPERATION\"",columnDefinition = "VARCHAR(32)")
 	private String operation;
+	
+	@Column(name = "\"VALUE_FROM_POSITION.ID\"", columnDefinition = "INTEGER")
+	private Integer fromPosId;
 
 	public Integer getPageId() {
 		return pageId;
@@ -60,6 +63,14 @@ public class PDFPagesPositionsMap {
 
 	public void setOperation(String operation) {
 		this.operation = operation;
+	}
+
+	public Integer getFromPosId() {
+		return fromPosId;
+	}
+
+	public void setFromPosId(Integer fromPosId) {
+		this.fromPosId = fromPosId;
 	}
 
 }

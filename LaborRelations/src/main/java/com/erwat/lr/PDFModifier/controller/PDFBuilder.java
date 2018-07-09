@@ -48,7 +48,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class PDFBuilder {
 	
 	Logger logger = LoggerFactory.getLogger(PDFBuilder.class);
-	 
+	
+	static int lineLength = 115;
+	
 	@Autowired
 	PDFValuesService pdfValuesService;
 	 
@@ -165,14 +167,16 @@ public class PDFBuilder {
 					
 						if(position.getFromSystem() != null){
 					 		switch (position.getFromSystem())
-					 		{
+					 		{// getting value from front end
 					 			case 0 : 
 					 				Object valueObject = inputObject.get(pos.getPosName());
 					 				Map<String, String> hmap = oMapper.convertValue(valueObject, Map.class);
 					 				sText = hmap.get("value");	
 					 				
 					 				if(sText != null){
-					 					if(position.getOperation().equalsIgnoreCase("text"))
+					 					if(position.getOperation().equalsIgnoreCase("text") 
+					 							|| position.getOperation().equalsIgnoreCase("date") 
+					 							|| position.getOperation().equalsIgnoreCase("textarea"))
 					 							{
 					 								xOffset = valueMap.get(0).getxShift();
 					 								yOffset = valueMap.get(0).getyShift();
@@ -193,7 +197,7 @@ public class PDFBuilder {
 					 				{sText = "";}
 					 				break;
 					 			case 1: 
-					 				
+					 				// for getting default value from backend(DB)
 					 				
 					 				for(PDFPositionValueMap value : valueMap){
 					 					if(value.getDefaultFlag())
@@ -206,6 +210,30 @@ public class PDFBuilder {
 					 					}
 					 				
 					 				break;
+					 			case 100: 
+					 				
+					 				PDFPositions frompos = pdfPositionsService.findById(position.getFromPosId());
+					 				Object valueFromObject = inputObject.get(frompos.getPosName());
+					 				Map<String, String> fhmap = oMapper.convertValue(valueFromObject, Map.class);
+					 				sText = fhmap.get("value");
+					 				
+					 				if(sText != null){
+					 					if(position.getOperation().equalsIgnoreCase("text") 
+					 							|| position.getOperation().equalsIgnoreCase("date") 
+					 							|| position.getOperation().equalsIgnoreCase("textarea") )
+					 						
+					 							{
+					 								xOffset = valueMap.get(0).getxShift();
+					 								yOffset = valueMap.get(0).getyShift();
+					 							}
+					 				
+					 				}
+					 				else
+					 				{
+					 					sText = "";
+					 				}
+					 				
+					 				break;
 					 		}
 					 		if(position.getOperation().equalsIgnoreCase("select"))
 					 		{
@@ -214,8 +242,11 @@ public class PDFBuilder {
 					 			fontSize = 15;
 					 		}
 					 		else
-					 		{font = PDType1Font.TIMES_ROMAN;
+					 		{
+					 			
+					 		font = PDType1Font.TIMES_ROMAN;
 					 		fontSize = 10;
+					 		
 					 		}
 					 			
 						}
@@ -227,24 +258,61 @@ public class PDFBuilder {
 						
 						if(position.getOperation().equalsIgnoreCase("date"))
 						{
-							String parts[]=  sText.split("/");
-						
-							//Writing text on the pdf 
-							contentStream.beginText();
-							contentStream.newLineAtOffset(xOffset,yOffset); // coordinates of the new text
-							contentStream.showText(parts[0]); 
-							contentStream.endText();
-							
-							contentStream.beginText();
-							contentStream.newLineAtOffset(xOffset+22,yOffset); // coordinates of the new text
-							contentStream.showText(parts[1]); 
-							contentStream.endText();
-							
-							
-							contentStream.beginText();
-							contentStream.newLineAtOffset(xOffset+44,yOffset); // coordinates of the new text
-							contentStream.showText(parts[2]); 
-							contentStream.endText();
+							if(sText.length() > 0){
+									float inc = 0;
+									String parts[]=  sText.split("/");
+									for(int j=0;j<parts.length;j++){
+									//Writing text on the pdf 
+									contentStream.beginText();
+									contentStream.newLineAtOffset(xOffset+inc,yOffset); // coordinates of the new text
+									contentStream.showText(parts[j]); 
+									contentStream.endText();
+									inc = inc + 22;
+							  
+							 }
+							}
+						}
+						else if (position.getOperation().equalsIgnoreCase("textarea"))
+						{
+							if(sText.length() > 0)
+							{	
+								int j = 0;
+								int k = lineLength;
+								float yInc = 0;
+								try{
+									while(true)
+									{
+										  String subText = sText.substring(j,j+lineLength);
+										  char ch = subText.charAt(lineLength - 1);
+										  
+										  if(!(Character.isWhitespace(ch))){
+											  while(!(Character.isWhitespace(subText.charAt(k - 1))))
+											  {
+												  k = k-1;
+											  }
+											    
+										  	}
+										  contentStream.beginText();
+										  contentStream.newLineAtOffset(xOffset,yOffset - yInc); // coordinates of the new text
+										  contentStream.showText(sText.substring(j,j+k)); 
+										  contentStream.endText();
+										  j = j+k;
+										  k = lineLength;
+										  yInc = yInc + 15;
+									  }
+								  
+								}
+								
+								catch (IndexOutOfBoundsException e)
+								{ 
+									
+									 contentStream.beginText();
+									  contentStream.newLineAtOffset(xOffset,yOffset - yInc);
+									  contentStream.showText(sText.substring(j)); 
+									  contentStream.endText();
+								}
+							}
+								
 							
 						}
 						else
