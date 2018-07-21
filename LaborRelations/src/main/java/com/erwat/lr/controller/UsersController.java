@@ -36,7 +36,7 @@ public class UsersController {
 	
 	@GetMapping("/Users/{id}")
 	 public ResponseEntity <Users> getById(@PathVariable("id") String id) {
-		Users item = usersService.findById(id);
+		Users item = usersService.findByIdFromSF(id);
 		return ResponseEntity.ok().body(item);
 	   }
 	

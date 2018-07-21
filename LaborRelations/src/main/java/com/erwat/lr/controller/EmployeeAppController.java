@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Session;
+import org.json.simple.JSONArray;
 
 import com.erwat.lr.documentRepository.CustomDocument;
 import com.erwat.lr.documentRepository.SharedConstants;
@@ -97,7 +99,8 @@ private static String successMessage = "SUCCESS";
 		Random rand = new Random();
 		Integer id = rand.nextInt(999999999);
 		
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
+		logger.debug("userId"+loggedUserId);
 //		if(request.isUserInRole("ManagerRole"))
 		
 		CaseTypeSubTypeMap caseTypeSubTypeMap = caseTypeSubTypeMapService.findById(lodgedCase.getCaseSubCaseId());
@@ -108,17 +111,18 @@ private static String successMessage = "SUCCESS";
 		lodgedCase.setCaseNumber(caseDescription.substring(0, 3).toUpperCase()+"-"+subCaseDescription.substring(0, 3).toUpperCase()+"-"+cYear+"-"+rand.nextInt(99999));
 		lodgedCase.setCaseStatusId(firstcaseTypeStatusOutcomeMap.getCaseStatusId());
 		lodgedCase.setCreatedBy(loggedUserId);
-		lodgedCase.setCreatedByName(usersService.findById(loggedUserId).getName());
+		Users loggedUser = usersService.findByIdFromSF(loggedUserId);
+		lodgedCase.setCreatedByName(loggedUser.getName());
 		lodgedCase.setOnBehalfEmployee(loggedUserId);
-		lodgedCase.setOnBehalfEmployeeName(usersService.findById(loggedUserId).getName());
+		lodgedCase.setOnBehalfEmployeeName(loggedUser.getName());
 		lodgedCase.setCreatedOn(today);
 		lodgedCase.setEmployeeId(loggedUserId);
-		lodgedCase.setEmployeeLastName(usersService.findById(loggedUserId).getName());
-		lodgedCase.setEmployeeFirstName(usersService.findById(loggedUserId).getName());
+		lodgedCase.setEmployeeLastName(loggedUser.getName());
+		lodgedCase.setEmployeeFirstName(loggedUser.getName());
 		lodgedCase.setExternalCaseRefNo(null);
 		lodgedCase.setFollowUpCase(null);
 		lodgedCase.setLastUpdatedBy(loggedUserId);
-		lodgedCase.setLastUpdatedByName(usersService.findById(loggedUserId).getName());
+		lodgedCase.setLastUpdatedByName(loggedUser.getName());
 		lodgedCase.setLastUpdatedOn(today);
 		lodgedCase.setParentCaseId(id);
 		lodgedCase.setStage(firstcaseTypeStatusOutcomeMap.getStage());
@@ -135,7 +139,7 @@ private static String successMessage = "SUCCESS";
 	@PutMapping(value = "/LodgedCase")
 	public ResponseEntity<?> update(@RequestBody LodgedCase lodgedCase,HttpServletRequest request)  {
 //		// restrict user to post and put on the basis of role and the fields 
-//		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+//		String loggedUserId =  request.getUserPrincipal().getName();
 //		Date today = new Date();
 //		if(request.isUserInRole("ManagerRole"))
 		LodgedCase eLodgedCase = lodgedCaseService.findById(lodgedCase.getId());
@@ -150,21 +154,21 @@ private static String successMessage = "SUCCESS";
 	@PutMapping(value = "/Results")
 	public ResponseEntity<?> updateResult(@RequestBody CaseResults result,HttpServletRequest request)  {
 //		// restrict user to post and put on the basis of role and the fields 
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 //		if(request.isUserInRole("ManagerRole"))
 		Date today = new Date();
 		result = caseResultsService.findById(result.getId());
 		result.setAccepted(true);
 		result.setAcceptedOn(today);
 		result.setAcceptedBy(loggedUserId);
-		result.setAcceptedByName(usersService.findById(loggedUserId).getName());
+		result.setAcceptedByName(usersService.findByIdFromSF(loggedUserId).getName());
 		result = caseResultsService.update(result);
 		return new ResponseEntity<String>(successMessage,HttpStatus.ACCEPTED);
 	}
 	
 	@GetMapping("/LodgedCase")
 	public ResponseEntity <List<LodgedCase>> getAllCases(HttpServletRequest request){
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 		List<LodgedCase> lodgedCases = lodgedCaseService.findByEmployeeId(loggedUserId);
 		List <CaseParticipants> userCases = caseParticipantsService.findByParticipantId(loggedUserId);
 		Integer statusBRuleId;
@@ -200,8 +204,10 @@ private static String successMessage = "SUCCESS";
 	}
 	
 	@GetMapping("/LodgedCase/{id}")
-	public ResponseEntity <?> getCasePerId(@PathVariable("id") Integer lodgedCaseId,HttpServletRequest request){
-		String loggedUserId = request.getUserPrincipal().getName().toUpperCase();
+	public ResponseEntity <?> getCasePerId(@PathVariable("id") Integer lodgedCaseId,HttpServletRequest request,
+			@RequestParam(value = "withNames", required = true) Boolean withNames
+			){
+		String loggedUserId = request.getUserPrincipal().getName();
 		LodgedCase lodgedCase = lodgedCaseService.findById(lodgedCaseId);
 		List <CaseParticipants> userCases = caseParticipantsService.findByLodgedCaseId(lodgedCaseId);
 		Boolean participated = false;
@@ -214,8 +220,16 @@ private static String successMessage = "SUCCESS";
 		Integer statusBRuleId = caseTypeStatusOutcomeMapService.findByCaseSatusPerCaseSubCase(lodgedCase.getCaseSubCaseId(),lodgedCase.getCaseStatusId()).get(0).getbStatusRuleId();
 		if(statusBRuleId !=null){
 		lodgedCase.setStatusBRule(statusBusinessRuleService.findById(statusBRuleId));}
-		if(usersService.findById(lodgedCase.getOnBehalfEmployee())!= null){
-		lodgedCase.setOnBehalfEmployeeName(usersService.findById(lodgedCase.getOnBehalfEmployee()).getName());
+		Users behalfUser =usersService.findByIdFromSF(lodgedCase.getOnBehalfEmployee());
+		if(behalfUser!= null){
+		lodgedCase.setOnBehalfEmployeeName(behalfUser.getName());
+		lodgedCase.setOnBehalfEmployeeUser(behalfUser);
+		}
+			Users eUser = usersService.findByIdFromSF(lodgedCase.getEmployeeId());
+		
+		if(eUser !=null){
+			lodgedCase.setEmployeeFirstName(eUser.getName());
+			lodgedCase.setEmployeeUser(eUser);
 		}
 		Integer sequence = caseTypeStatusOutcomeMapService.findByCaseSatusPerCaseSubCase(lodgedCase.getCaseSubCaseId(),lodgedCase.getCaseStatusId()).get(0).getSequence();
 		lodgedCase.setcStatusSeq(sequence);
@@ -229,8 +243,10 @@ private static String successMessage = "SUCCESS";
 		{	
 			if(result.getAccepted())
 			{
-				if(usersService.findById(result.getAcceptedBy()) != null){
-				result.setAcceptedByName(usersService.findById(result.getAcceptedBy()).getName());}
+				Users acceptUser =usersService.findByIdFromSF(result.getAcceptedBy());
+				if(acceptUser != null){
+				result.setAcceptedByName(acceptUser.getName());
+				result.setAcceptedByUser(acceptUser);}
 			}
 			results.add(result);
 		}
@@ -239,7 +255,15 @@ private static String successMessage = "SUCCESS";
 		for(CaseParticipants participant : cParticipants )
 		{
 			if(participant.getStage().intValue() == lodgedCase.getStage().intValue() )
-			{participants.add(participant);}
+			{
+				if(withNames){
+				Users participantUser =usersService.findByIdFromSF(participant.getParticipantId());
+				participant.setParticipantName(participantUser.getName());
+				participant.setParticipantUser(participantUser);
+				}
+				participants.add(participant);
+				
+			}
 		}
 		lodgedCase.setParticipants(participants);
 		return ResponseEntity.ok().body(lodgedCase);}
@@ -255,7 +279,7 @@ private static String successMessage = "SUCCESS";
 		LodgedCase lodgedCase = lodgedCaseService.findById(lodgedCaseId);
 		List <CaseParticipants> userCases = caseParticipantsService.findByLodgedCaseId(lodgedCaseId);
 		
-		String loggedUserId = request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId = request.getUserPrincipal().getName();
 		Boolean participated = false;
 		for (CaseParticipants userCase :userCases){
 			if (userCase.getParticipantId().equalsIgnoreCase(loggedUserId))
@@ -333,16 +357,16 @@ private static String successMessage = "SUCCESS";
 		return ResponseEntity.ok().body(fcaseTypeNatureCategoryMapList);
 	  }
 	@GetMapping("/Users")
-	public ResponseEntity<List<Users>> getAll(){
+	public ResponseEntity<?> getAll(@RequestParam(value = "search", required = true) String searchString){
 		
-		List<Users> items = usersService.findAll();
-	     return ResponseEntity.ok().body(items);
+		JSONArray items = usersService.findAllSF(searchString);
+	     return ResponseEntity.ok().body(items.toString());
 		
 	}
 	
 	@GetMapping("/Users/{id}")
 	 public ResponseEntity <Users> getById(@PathVariable("id") String id) {
-		Users item = usersService.findById(id);
+		Users item = usersService.findByIdFromSF(id);
 		return ResponseEntity.ok().body(item);
 	   }
 	

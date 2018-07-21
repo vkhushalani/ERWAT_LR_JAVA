@@ -64,6 +64,9 @@ public class CaseParticipants {
 	@Column(name = "\"PARTICIPANT_NAME\"",columnDefinition = "VARCHAR(32)")
     private String participantName;
 	
+	@Transient
+	private Users participantUser;
+	
 	@Column(name = "\"TYPE\"",columnDefinition = "VARCHAR(11)")
     private String type;
 	
@@ -196,6 +199,14 @@ public class CaseParticipants {
 
 	public void setStage(Integer stage) {
 		this.stage = stage;
+	}
+
+	public Users getParticipantUser() {
+		return participantUser;
+	}
+
+	public void setParticipantUser(Users participantUser) {
+		this.participantUser = participantUser;
 	}
 
 }

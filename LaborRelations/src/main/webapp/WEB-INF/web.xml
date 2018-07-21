@@ -1,62 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee"
-    xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-    id="WebApp_ID" version="2.5">
- 
-    <!-- Declare the JNDI lookup of the default data source -->
-    <resource-ref>
-        <res-ref-name>jdbc/DefaultDB</res-ref-name>
-        <res-type>javax.sql.DataSource</res-type>
-    </resource-ref>
-    <resource-ref>
-	   <res-ref-name>EcmService</res-ref-name>
-	   <res-type>com.sap.ecm.api.EcmService</res-type>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	id="WebApp_ID" version="2.5">
+
+	<!-- Declare the JNDI lookup of the default data source -->
+	<resource-ref>
+		<res-ref-name>jdbc/DefaultDB</res-ref-name>
+		<res-type>javax.sql.DataSource</res-type>
 	</resource-ref>
 	<resource-ref>
-	   <res-ref-name>connectivityConfiguration</res-ref-name>
-	   <res-type>com.sap.core.connectivity.api.configuration.ConnectivityConfiguration</res-type>
+		<res-ref-name>EcmService</res-ref-name>
+		<res-type>com.sap.ecm.api.EcmService</res-type>
 	</resource-ref>
-	   <security-constraint>
-	    <web-resource-collection>
-	      <web-resource-name>Table Maint Services</web-resource-name>
-	      <url-pattern>/TableMaint/*</url-pattern>
-	    </web-resource-collection>
-	    <auth-constraint>
-	      <role-name>MaintenenceRole</role-name>
-	    </auth-constraint>
-	  </security-constraint>
-	  <security-constraint>
-	    <web-resource-collection>
-	      <web-resource-name>Admin App Services</web-resource-name>
-	      <url-pattern>/Admin/*</url-pattern>
-	    </web-resource-collection>
-	    <auth-constraint>
-	      <role-name>AdminRole</role-name>
-	    </auth-constraint>
-	  </security-constraint>
-	  <security-constraint>
-	    <web-resource-collection>
-	      <web-resource-name>Employee/Admin Services</web-resource-name>
-	      <url-pattern>/*</url-pattern>
-	    </web-resource-collection>
-	    <auth-constraint>
-	      <role-name>ValidUserRole</role-name>
-	    </auth-constraint>
-	  </security-constraint>
-	  <security-role>
+	
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Table Maint Services</web-resource-name>
+			<url-pattern>/TableMaint/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>MaintenenceRole</role-name>
+		</auth-constraint>
+	</security-constraint>
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Admin App Services</web-resource-name>
+			<url-pattern>/Admin/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>AdminRole</role-name>
+		</auth-constraint>
+	</security-constraint>
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Employee/Admin Services</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>ValidUserRole</role-name>
+		</auth-constraint>
+	</security-constraint>
+	<security-role>
 		<description>All Users</description>
 		<role-name>Everyone</role-name>
 	</security-role>
-	 <security-role>
+	<security-role>
 		<description>Maint Users</description>
 		<role-name>MaintenenceRole</role-name>
 	</security-role>
-	 <security-role>
+	<security-role>
 		<description>Admin Users</description>
 		<role-name>AdminRole</role-name>
 	</security-role>
-	  <login-config>
-	    <auth-method>FORM</auth-method>
-	  </login-config>
-	  
-	</web-app>
+	<login-config>
+		<auth-method>FORM</auth-method>
+	</login-config>
+	
+	<!-- Manish dependencies -->
+	
+	<resource-ref>
+		<res-ref-name>connectivityConfiguration</res-ref-name>
+		<res-type>com.sap.core.connectivity.api.configuration.ConnectivityConfiguration</res-type>
+	</resource-ref>
+	
+	<resource-ref>
+		<res-ref-name>erwatSFOData</res-ref-name>
+		<res-type>com.sap.core.connectivity.api.http.HttpDestination</res-type>
+	</resource-ref>
+	
+	<resource-ref>
+		<res-ref-name>TenantContext</res-ref-name>
+		<res-type>com.sap.cloud.account.TenantContext</res-type>
+	</resource-ref>
+
+	<resource-ref>
+		<res-ref-name>user/Provider</res-ref-name>
+		<res-type>com.sap.security.um.user.UserProvider</res-type>
+	</resource-ref>
+	
+	<!-- End of Manish Dependencies -->
+</web-app>

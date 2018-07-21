@@ -68,6 +68,9 @@ public class CaseResults {
 	@Transient
 	private Boolean checkEdit;
 	
+	@Transient
+	private Users acceptedByUser;
+	
 	@ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "\"LODGED_CASES.ID\"" ,referencedColumnName="\"ID\"",insertable=false, updatable=false)
 	private LodgedCase lodgedCase;
@@ -198,6 +201,14 @@ public class CaseResults {
 
 	public void setAcceptedByName(String acceptedByName) {
 		this.acceptedByName = acceptedByName;
+	}
+
+	public Users getAcceptedByUser() {
+		return acceptedByUser;
+	}
+
+	public void setAcceptedByUser(Users acceptedByUser) {
+		this.acceptedByUser = acceptedByUser;
 	}
 
 

@@ -72,6 +72,9 @@ public class LodgedCase {
 	@Transient
 	private String onBehalfEmployeeName;
 	
+	@Transient
+	private Users onBehalfEmployeeUser;
+	
 	@Column(name = "\"EMPLOYEE_ID\"",columnDefinition = "VARCHAR(32)")
 	private String employeeId;
 	
@@ -80,6 +83,9 @@ public class LodgedCase {
 	
 	@Column(name = "\"EMPLOYEE_FIRST_NAME\"",columnDefinition = "VARCHAR(32)")
 	private String employeeFirstName;
+	
+	@Transient
+	private Users employeeUser;
 	
 	@Column(name = "\"EMPLOYEE_COMPANY\"",columnDefinition = "VARCHAR(64)")
 	private String employeeCompany;
@@ -471,6 +477,22 @@ public class LodgedCase {
 
 	public void setOnBehalfEmployeeName(String onBehalfEmployeeName) {
 		this.onBehalfEmployeeName = onBehalfEmployeeName;
+	}
+
+	public Users getOnBehalfEmployeeUser() {
+		return onBehalfEmployeeUser;
+	}
+
+	public void setOnBehalfEmployeeUser(Users onBehalfEmployeeUser) {
+		this.onBehalfEmployeeUser = onBehalfEmployeeUser;
+	}
+
+	public Users getEmployeeUser() {
+		return employeeUser;
+	}
+
+	public void setEmployeeUser(Users employeeUser) {
+		this.employeeUser = employeeUser;
 	}
 	
 }

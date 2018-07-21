@@ -22,6 +22,7 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,8 +145,18 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		if(statusBRuleId !=null){
 		lodgedCase.setStatusBRule(statusBusinessRuleService.findById(statusBRuleId));}
 		lodgedCase.setCaseCategoryText(caseCategoryService.findById(caseTypeNatureCategoryMapService.findByCaseSubCaseNature(lodgedCase.getCaseSubCaseId(), lodgedCase.getNatureId()).getCaseCategoryId()).getDescription());
-		if(usersService.findById(lodgedCase.getOnBehalfEmployee()) !=null){
-		lodgedCase.setOnBehalfEmployeeName(usersService.findById(lodgedCase.getOnBehalfEmployee()).getName());
+		
+		Users bUser = usersService.findByIdFromSF(lodgedCase.getOnBehalfEmployee());
+		
+		if(bUser !=null){
+		lodgedCase.setOnBehalfEmployeeName(bUser.getName());
+		lodgedCase.setOnBehalfEmployeeUser(bUser);
+		}
+		Users eUser = usersService.findByIdFromSF(lodgedCase.getEmployeeId());
+		
+		if(eUser !=null){
+			lodgedCase.setEmployeeFirstName(eUser.getName());
+			lodgedCase.setEmployeeUser(eUser);
 		}
 		Integer sequence = caseTypeStatusOutcomeMapService.findByCaseSatusPerCaseSubCase(lodgedCase.getCaseSubCaseId(),lodgedCase.getCaseStatusId()).get(0).getSequence();
 		lodgedCase.setcStatusSeq(sequence);
@@ -153,9 +164,12 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		List<CaseResults> cResults = lodgedCase.getResults();
 		for (CaseResults result :cResults)
 		{	if(result.getAccepted()){
-	
-				if(usersService.findById(result.getAcceptedBy()) != null){
-				result.setAcceptedByName(usersService.findById(result.getAcceptedBy()).getName());}
+				
+			Users accUser = usersService.findByIdFromSF(result.getAcceptedBy());
+				if(accUser != null){
+				result.setAcceptedByName(accUser.getName());
+				result.setAcceptedByUser(accUser);
+				}
 			
 			}
 			results.add(result);
@@ -167,7 +181,9 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		}	
 	
 	@GetMapping("/LodgedCase/{id}/CaseParticipants")
-	public ResponseEntity <List<LodgedCaseParticipants>> getCaseParticipantsByLodgedId(@PathVariable("id") Integer lodgedCaseId){
+	public ResponseEntity <List<LodgedCaseParticipants>> getCaseParticipantsByLodgedId(@PathVariable("id") Integer lodgedCaseId,
+			@RequestParam(value = "withNames", required = true) Boolean withNames
+			){
 		LodgedCase lodgedCase = lodgedCaseService.findById(lodgedCaseId);
 		List<CaseTypeRoleMap> caseTypeRoleMapList = caseTypeRoleMapService.findByStageCaseSubCaseId(lodgedCase.getCaseSubCaseId(),lodgedCase.getStage());
 		CaseParticipants cParticipant;
@@ -187,6 +203,11 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 			else
 			{	
 			participant.setOperation("PUT");
+			if(withNames){
+				Users partUser = usersService.findByIdFromSF(cParticipant.getParticipantId());
+			cParticipant.setParticipantName(partUser.getName());
+			cParticipant.setParticipantUser(partUser);
+			}
 			participant.setParticipant(cParticipant);}
 			participants.add(participant);
 			
@@ -222,9 +243,13 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 			if(aResult != null)
 			{
 				result.setCheckEdit(false);
-				if(result.getAcceptedBy()!=null && usersService.findById(result.getAcceptedBy()) != null){
-					
-				result.setAcceptedByName(usersService.findById(result.getAcceptedBy()).getName());
+				
+				if(result.getAcceptedBy()!=null){
+				Users accUser = usersService.findByIdFromSF(result.getAcceptedBy());
+				if(accUser != null){
+				result.setAcceptedByName(accUser.getName());
+				result.setAcceptedByUser(accUser);
+				}
 			}
 				}
 			else
@@ -276,20 +301,20 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 	}
 	
 	@GetMapping("/Users")
-	public ResponseEntity<List<Users>> getAll(){
+	public ResponseEntity<?> getAll(@RequestParam(value = "search", required = true) String searchString){
 		
-		List<Users> items = usersService.findAll();
-	     return ResponseEntity.ok().body(items);
+		JSONArray items = usersService.findAllSF(searchString);
+	     return ResponseEntity.ok().body(items.toString());
 		
 	}
 	
 	@GetMapping("/Users/{id}")
 	 public ResponseEntity <Users> getById(@PathVariable("id") String id) {
-		Users item = usersService.findById(id);
+		Users item = usersService.findByIdFromSF(id);
 		return ResponseEntity.ok().body(item);
 	   }
 	
-	@GetMapping("/Users/{type}")
+	@GetMapping("/Users/Type/{type}")
 	 public ResponseEntity <List<Users>> getByType(@PathVariable("type") String type) {
 		List<Users> items = usersService.findByType(type);
 		return ResponseEntity.ok().body(items);
@@ -596,7 +621,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 	
 	@PostMapping(value = "/LodgedCase")
 	public ResponseEntity<?> lodgeCase(@RequestBody LodgedCase lodgedCase,HttpServletRequest request)  {
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 
 		Random rand = new Random();
 		Integer id = rand.nextInt(999999999);
@@ -615,8 +640,9 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		lodgedCase.setCaseStatusId(firstcaseTypeStatusOutcomeMap.getCaseStatusId());
 		lodgedCase.setCreatedBy(loggedUserId);
 		lodgedCase.setCreatedOn(today);
-		lodgedCase.setEmployeeFirstName(usersService.findById(lodgedCase.getEmployeeId()).getName());
-		lodgedCase.setEmployeeLastName(usersService.findById(lodgedCase.getEmployeeId()).getName());
+		Users empUser = usersService.findByIdFromSF(lodgedCase.getEmployeeId());
+		lodgedCase.setEmployeeFirstName(empUser.getName());
+		lodgedCase.setEmployeeLastName(empUser.getName());
 		lodgedCase.setLastUpdatedBy(loggedUserId);
 		lodgedCase.setLastUpdatedOn(today);
 		if(lodgedCase.getFollowUpCase()!=null && lodgedCase.getFollowUpCase().length() > 0 ){
@@ -641,7 +667,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 	@PutMapping(value = "/LodgedCase")
 	public ResponseEntity<?> updateCase(@RequestBody LodgedCase lodgedCase,HttpServletRequest request)  {
 		LodgedCase eLodgedCase = lodgedCaseService.findById(lodgedCase.getId());
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 		Date today = new Date();
 		//not allow to change the non changeable fields
 				lodgedCase.setCreatedBy(eLodgedCase.getCreatedBy());
@@ -687,14 +713,14 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 	
 	@PostMapping(value = "/CaseParticipants")
 	public ResponseEntity<?> createParicipant(@RequestBody CaseParticipants caseParticipant,HttpServletRequest request)  {
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 		Date today = new Date();
 		
 		caseParticipant.setCreatedBy(loggedUserId);
 		caseParticipant.setCreatedOn(today);
 		caseParticipant.setUpdatedBy(loggedUserId);
 		caseParticipant.setUpdatedOn(today);
-		caseParticipant.setParticipantName(usersService.findById(caseParticipant.getParticipantId()).getName());
+		caseParticipant.setParticipantName(usersService.findByIdFromSF(caseParticipant.getParticipantId()).getName());
 		caseParticipant.setStage(lodgedCaseService.findById(caseParticipant.getLodgedCaseId()).getStage());
 		caseParticipant =  caseParticipantsService.create(caseParticipant);
 		return new ResponseEntity<>(caseParticipant.getId(),HttpStatus.CREATED);
@@ -704,7 +730,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 	
 	@PutMapping(value = "/CaseParticipants")
 	public ResponseEntity<?> updateParicipant(@RequestBody CaseParticipants caseParticipant,HttpServletRequest request)  {
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 		Date today = new Date();
 		CaseParticipants eCaseParticipant = caseParticipantsService.findById(caseParticipant.getId());
 		caseParticipant.setCreatedOn(eCaseParticipant.getCreatedOn());
@@ -714,7 +740,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		caseParticipant.setUpdatedBy(loggedUserId);
 		caseParticipant.setUpdatedOn(today);
 		caseParticipant.setStage(eCaseParticipant.getStage());
-		caseParticipant.setParticipantName(usersService.findById(caseParticipant.getParticipantId()).getName());
+		caseParticipant.setParticipantName(usersService.findByIdFromSF(caseParticipant.getParticipantId()).getName());
 		caseParticipant =  caseParticipantsService.update(caseParticipant);
 		return new ResponseEntity<>(successMessage,HttpStatus.ACCEPTED);
 		
@@ -722,7 +748,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 	
 	@PostMapping(value = "/CaseResults")
 	public ResponseEntity<?> createOutcome(@RequestBody CaseResults caseResults,HttpServletRequest request)  {
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 		CaseResults eResult;
 		Date today = new Date();
 		caseResults.setCreatedBy(loggedUserId);
@@ -753,7 +779,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		CaseResults eResult = caseResultsService.findByLodgedCaseAccepted(caseResults.getLodgedCaseId(), true, caseResults.getCaseStatusId());
 		if(eResult != null)
 		{return new ResponseEntity<>("Error",HttpStatus.CONFLICT);}
-		String loggedUserId =  request.getUserPrincipal().getName().toUpperCase();
+		String loggedUserId =  request.getUserPrincipal().getName();
 		CaseResults ecaseResults = caseResultsService.findById(caseResults.getId());
 		Date today = new Date();
 		caseResults.setAccepted(true);

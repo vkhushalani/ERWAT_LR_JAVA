@@ -25,6 +25,7 @@ public class Users {
 	@Column(name = "\"USER_NAME\"", columnDefinition = "VARCHAR(64)")
 	private String userName;
 	
+	
 	@Column(name = "\"USER_TYPE\"", columnDefinition = "VARCHAR(32)")
 	private String type;
 	
@@ -33,6 +34,7 @@ public class Users {
 	
 	@Column(name = "\"NAME_TEMP\"", columnDefinition = "VARCHAR(64)")
 	private String name;
+	
 	
 	@Column(name = "\"START_DATE\"", columnDefinition = "SECONDDATE")
 	private Date sDate;
