@@ -1,7 +1,6 @@
 package com.erwat.lr.Utilities;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+
 import java.util.ArrayList;
 
 /*
@@ -33,15 +32,17 @@ public class URLMaker {
 		switch (className) {
 
 		case "UserDetails":
-			if (list.get(0) != null) {
-				try {
-					urlToMake = urlToMake + "/User?%24filter=userId%20eq%20'" + URLEncoder.encode(list.get(0), "UTF-8")
-							+ "'&$format=json&$select=userId,username,firstName,lastName";
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			urlToMake = urlToMake + "/User?$filter=";
+			for(String item : list){
+			if (item != null) {
+				urlToMake = urlToMake + "userId eq '" + item+"'";
+				if(!(item.equals(list.get(list.size() - 1))))
+				{
+					urlToMake = urlToMake + " or "; 
 				}
-			}
+			}}
+			
+			urlToMake = urlToMake + "&$format=json&$select=userId,username,firstName,lastName";
 			break;
 
 		case "SearchUser":

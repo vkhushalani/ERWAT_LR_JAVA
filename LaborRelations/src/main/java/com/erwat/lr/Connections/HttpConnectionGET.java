@@ -33,7 +33,7 @@ import com.sap.core.connectivity.api.configuration.DestinationConfiguration;
 public class HttpConnectionGET {
 
 	private DestinationConfiguration destinationConfiguration;
-	private URI uri;
+	private String urlToCall;
 
 	private static final String authTypeBasic = "BasicAuthentication";
 
@@ -46,8 +46,8 @@ public class HttpConnectionGET {
 	private TenantContext context = null;
 
 //	@SuppressWarnings("rawtypes")
-	public HttpConnectionGET(URI uri, DestinationConfiguration dConfig) {
-		this.uri = uri;
+	public HttpConnectionGET(String urlToCall, DestinationConfiguration dConfig) {
+		this.urlToCall = urlToCall;
 		this.destinationConfiguration = dConfig;
 //		this.className = className;
 	}
@@ -71,7 +71,7 @@ public class HttpConnectionGET {
 		String response = "";
 
 		try {
-			url = new URL(uri.normalize().toString());
+			url = new URL(urlToCall);
 
 			connection = (HttpURLConnection) url.openConnection(proxy);
 			connection.addRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -133,7 +133,7 @@ public class HttpConnectionGET {
 		String response = "";
 
 		try {
-			url = new URL(uri.normalize().toString());
+			url = new URL(urlToCall);
 
 			connection = (HttpURLConnection) url.openConnection();
 			connection.addRequestProperty("Accept", "application/json");

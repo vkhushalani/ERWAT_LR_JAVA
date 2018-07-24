@@ -1,5 +1,6 @@
 package com.erwat.lr.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.simple.JSONArray;
@@ -14,6 +15,7 @@ public interface UsersService {
 	public Users create(Users item);
 //	public Users findById(String id);
 	public Users findByIdFromSF(String id);
+	public JSONArray findMultipleIdFromSF(ArrayList<String> userIDList);
 	public void deleteById(String id);
 	public List<Users> findByType(String type);
 

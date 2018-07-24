@@ -23,6 +23,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,7 +146,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		if(statusBRuleId !=null){
 		lodgedCase.setStatusBRule(statusBusinessRuleService.findById(statusBRuleId));}
 		lodgedCase.setCaseCategoryText(caseCategoryService.findById(caseTypeNatureCategoryMapService.findByCaseSubCaseNature(lodgedCase.getCaseSubCaseId(), lodgedCase.getNatureId()).getCaseCategoryId()).getDescription());
-		
+
 		Users bUser = usersService.findByIdFromSF(lodgedCase.getOnBehalfEmployee());
 		
 		if(bUser !=null){
@@ -188,6 +189,7 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 		List<CaseTypeRoleMap> caseTypeRoleMapList = caseTypeRoleMapService.findByStageCaseSubCaseId(lodgedCase.getCaseSubCaseId(),lodgedCase.getStage());
 		CaseParticipants cParticipant;
 		List<LodgedCaseParticipants> participants = new ArrayList<LodgedCaseParticipants>();
+		ArrayList<String> userIDList = new ArrayList<String>();
 		
 		for(CaseTypeRoleMap caseTypeRoleMap : caseTypeRoleMapList)
 		{	LodgedCaseParticipants participant = new LodgedCaseParticipants();
@@ -204,15 +206,39 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 			{	
 			participant.setOperation("PUT");
 			if(withNames){
-				Users partUser = usersService.findByIdFromSF(cParticipant.getParticipantId());
-			cParticipant.setParticipantName(partUser.getName());
-			cParticipant.setParticipantUser(partUser);
+//				Users partUser = usersService.findByIdFromSF(cParticipant.getParticipantId());
+//				cParticipant.setParticipantName(partUser.getName());
+//				cParticipant.setParticipantUser(partUser);
+				
+				userIDList.add(cParticipant.getParticipantId());
 			}
 			participant.setParticipant(cParticipant);}
 			participants.add(participant);
 			
 		}
 		
+		if(withNames && userIDList.size()!=0){
+			
+			JSONArray jsonArr = usersService.findMultipleIdFromSF(userIDList);
+			for(LodgedCaseParticipants lCPart: participants)
+			{
+				if(lCPart.getOperation().equals("PUT")){
+				String partIdString = lCPart.getParticipant().getParticipantId();
+				for(int i=0;i<jsonArr.size();i++)
+				{
+					JSONObject partUserObj  = (JSONObject)jsonArr.get(i);
+					if(partIdString.equals((String)partUserObj.get("userId")))
+						{
+							Users pUser = new Users();
+							pUser.setId(partIdString);
+							pUser.setName( partUserObj.get("firstName").toString() + " " + partUserObj.get("lastName").toString());
+							pUser.setUserName(partIdString);
+						lCPart.getParticipant().setParticipantName(pUser.getName());
+						lCPart.getParticipant().setParticipantUser(pUser);
+						}
+				}}
+			}
+		}
 		return ResponseEntity.ok().body(participants);
 	}
 	

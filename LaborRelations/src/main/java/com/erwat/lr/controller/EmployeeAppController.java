@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import com.erwat.lr.documentRepository.CustomDocument;
 import com.erwat.lr.documentRepository.SharedConstants;
@@ -211,26 +212,31 @@ private static String successMessage = "SUCCESS";
 		LodgedCase lodgedCase = lodgedCaseService.findById(lodgedCaseId);
 		List <CaseParticipants> userCases = caseParticipantsService.findByLodgedCaseId(lodgedCaseId);
 		Boolean participated = false;
+		ArrayList<String> userIDList = new ArrayList<String>();
 		for (CaseParticipants userCase :userCases){
 			if (userCase.getParticipantId().equalsIgnoreCase(loggedUserId))
 				{ participated = true;
 				break;}
 		}
 		if(loggedUserId.equalsIgnoreCase(lodgedCase.getEmployeeId()) || participated ){
+			
 		Integer statusBRuleId = caseTypeStatusOutcomeMapService.findByCaseSatusPerCaseSubCase(lodgedCase.getCaseSubCaseId(),lodgedCase.getCaseStatusId()).get(0).getbStatusRuleId();
 		if(statusBRuleId !=null){
 		lodgedCase.setStatusBRule(statusBusinessRuleService.findById(statusBRuleId));}
 		Users behalfUser =usersService.findByIdFromSF(lodgedCase.getOnBehalfEmployee());
+		
 		if(behalfUser!= null){
 		lodgedCase.setOnBehalfEmployeeName(behalfUser.getName());
 		lodgedCase.setOnBehalfEmployeeUser(behalfUser);
 		}
-			Users eUser = usersService.findByIdFromSF(lodgedCase.getEmployeeId());
+		
+		Users eUser = usersService.findByIdFromSF(lodgedCase.getEmployeeId());
 		
 		if(eUser !=null){
 			lodgedCase.setEmployeeFirstName(eUser.getName());
 			lodgedCase.setEmployeeUser(eUser);
 		}
+		
 		Integer sequence = caseTypeStatusOutcomeMapService.findByCaseSatusPerCaseSubCase(lodgedCase.getCaseSubCaseId(),lodgedCase.getCaseStatusId()).get(0).getSequence();
 		lodgedCase.setcStatusSeq(sequence);
 		
@@ -257,16 +263,38 @@ private static String successMessage = "SUCCESS";
 			if(participant.getStage().intValue() == lodgedCase.getStage().intValue() )
 			{
 				if(withNames){
-				Users participantUser =usersService.findByIdFromSF(participant.getParticipantId());
-				participant.setParticipantName(participantUser.getName());
-				participant.setParticipantUser(participantUser);
+//				Users participantUser =usersService.findByIdFromSF(participant.getParticipantId());
+//				participant.setParticipantName(participantUser.getName());
+//				participant.setParticipantUser(participantUser);
+				userIDList.add(participant.getParticipantId());
 				}
 				participants.add(participant);
 				
 			}
 		}
+		if(withNames && userIDList.size()!=0){
+			JSONArray jsonArr = usersService.findMultipleIdFromSF(userIDList);
+			for(CaseParticipants participant : participants)
+			{
+				String partIdString = participant.getParticipantId();
+				for(int i=0;i<jsonArr.size();i++)
+				{
+					JSONObject partUserObj  = (JSONObject)jsonArr.get(i);
+					if(partIdString.equals((String)partUserObj.get("userId")))
+						{
+							Users pUser = new Users();
+							pUser.setId(partIdString);
+							pUser.setName( partUserObj.get("firstName").toString() + " " + partUserObj.get("lastName").toString());
+							pUser.setUserName(partIdString);
+							participant.setParticipantName(pUser.getName());
+							participant.setParticipantUser(pUser);
+						}
+				
+			}
+		}}
 		lodgedCase.setParticipants(participants);
-		return ResponseEntity.ok().body(lodgedCase);}
+		return ResponseEntity.ok().body(lodgedCase);
+		}
 		else
 		{
 			return new ResponseEntity<>("ERROR",HttpStatus.FORBIDDEN);

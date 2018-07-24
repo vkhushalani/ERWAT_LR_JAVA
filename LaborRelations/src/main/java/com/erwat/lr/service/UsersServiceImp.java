@@ -1,5 +1,6 @@
 package com.erwat.lr.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -72,7 +73,10 @@ public class UsersServiceImp implements UsersService {
 	@Override
 	public Users findByIdFromSF(String id) {
 		CallingSFAPIs sfCall = new CallingSFAPIs();
-		JSONArray jsonArr = sfCall.callSFAPI(id, "UserDetails");
+		ArrayList<String> userIDList;
+		userIDList = new ArrayList<String>();
+		userIDList.add(id);
+		JSONArray jsonArr = sfCall.callSFAPI(userIDList, "UserDetails");
 
 		if(jsonArr.size() != 0){
 		
@@ -87,11 +91,34 @@ public class UsersServiceImp implements UsersService {
 		return null;
 		
 	}
+	
+	@Override
+	public JSONArray findMultipleIdFromSF(ArrayList<String> userIDList) {
+		CallingSFAPIs sfCall = new CallingSFAPIs();
+	
+		JSONArray jsonArr = sfCall.callSFAPI(userIDList, "UserDetails");
+		return jsonArr;
+//		if(jsonArr.size() != 0){
+//		
+//		JSONObject userObject = (JSONObject) jsonArr.get(0);
+//		Users user = new Users();
+//		user.setName(userObject.get("firstName").toString() + " " + userObject.get("lastName").toString());
+//		user.setId(userObject.get("userId").toString());
+//		user.setUserName(userObject.get("username").toString());
+//		return user;
+//		}
+//		
+//		return null;
+		
+	}
 
 	@Override
 	public JSONArray findAllSF(String searchString) {
 		CallingSFAPIs sfCall = new CallingSFAPIs();
-		JSONArray jsonArr = sfCall.callSFAPI(searchString, "SearchUser");
+		ArrayList<String> userIDList;
+		userIDList = new ArrayList<String>();
+		userIDList.add(searchString);
+		JSONArray jsonArr = sfCall.callSFAPI(userIDList, "SearchUser");
 		return jsonArr;
 	}
 

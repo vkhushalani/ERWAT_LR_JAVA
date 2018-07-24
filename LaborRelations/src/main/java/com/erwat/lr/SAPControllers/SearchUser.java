@@ -40,7 +40,7 @@ public class SearchUser {
 				ConstantManager.lineSeparator + ConstantManager.urlLog + urlToCall + ConstantManager.lineSeparator);
 		
 		URI uri = CommonFunctions.convertToURI(urlToCall);
-		HttpConnectionGET httpConnectionGET = new HttpConnectionGET(uri, URLManager.dConfiguration);
+		HttpConnectionGET httpConnectionGET = new HttpConnectionGET(urlToCall, URLManager.dConfiguration);
 		String result = httpConnectionGET.connectToServer();
 		
 		JSONObject jsonObject = (JSONObject) JSONValue.parse(result);
