@@ -32,6 +32,9 @@ public class PDFPagesPositionsMap {
 	
 	@Column(name = "\"VALUE_FROM_POSITION.ID\"", columnDefinition = "INTEGER")
 	private Integer fromPosId;
+	
+	@Column(name = "\"BREAK_POINT\"", columnDefinition = "VARCHAR(512)")
+	private String breakPoint;
 
 	public Integer getPageId() {
 		return pageId;
@@ -71,6 +74,14 @@ public class PDFPagesPositionsMap {
 
 	public void setFromPosId(Integer fromPosId) {
 		this.fromPosId = fromPosId;
+	}
+
+	public String getBreakPoint() {
+		return breakPoint;
+	}
+
+	public void setBreakPoint(String breakPoint) {
+		this.breakPoint = breakPoint;
 	}
 
 }

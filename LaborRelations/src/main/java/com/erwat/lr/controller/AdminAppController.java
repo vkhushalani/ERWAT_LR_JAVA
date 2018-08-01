@@ -321,7 +321,6 @@ Logger logger = LoggerFactory.getLogger(AdminAppController.class);
 			att = new AttachmentsObject();
 			att.setDocId(doc.getId());
 			att.setDocName(doc.getName().split("#")[0]);
-			resultDoc.add(att);
 		}}
 		return ResponseEntity.ok().body(resultDoc);
 	}

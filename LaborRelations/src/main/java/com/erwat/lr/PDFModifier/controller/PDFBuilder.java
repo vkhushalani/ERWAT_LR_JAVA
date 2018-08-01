@@ -176,7 +176,8 @@ public class PDFBuilder {
 					 				if(sText != null){
 					 					if(position.getOperation().equalsIgnoreCase("text") 
 					 							|| position.getOperation().equalsIgnoreCase("date") 
-					 							|| position.getOperation().equalsIgnoreCase("textarea"))
+					 							|| position.getOperation().equalsIgnoreCase("textarea") 
+					 							|| position.getOperation().equalsIgnoreCase("multiline"))
 					 							{
 					 								xOffset = valueMap.get(0).getxShift();
 					 								yOffset = valueMap.get(0).getyShift();
@@ -211,6 +212,7 @@ public class PDFBuilder {
 					 				
 					 				break;
 					 			case 100: 
+					 				// for getting value from another position on the pdf
 					 				
 					 				PDFPositions frompos = pdfPositionsService.findById(position.getFromPosId());
 					 				Object valueFromObject = inputObject.get(frompos.getPosName());
@@ -220,7 +222,8 @@ public class PDFBuilder {
 					 				if(sText != null){
 					 					if(position.getOperation().equalsIgnoreCase("text") 
 					 							|| position.getOperation().equalsIgnoreCase("date") 
-					 							|| position.getOperation().equalsIgnoreCase("textarea") )
+					 							|| position.getOperation().equalsIgnoreCase("textarea")
+					 							|| position.getOperation().equalsIgnoreCase("multiline"))
 					 						
 					 							{
 					 								xOffset = valueMap.get(0).getxShift();
@@ -252,10 +255,11 @@ public class PDFBuilder {
 						}
 						
 						
-						yOffset = page.getMediaBox().getHeight() - yOffset;
+						yOffset = page.getMediaBox().getHeight() - yOffset; // changing the y axis directions
 						PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true);
-						contentStream.setFont(font, fontSize);
+						contentStream.setFont(font, fontSize); // setting writing font 
 						
+						// splitting the date value and writing on pdf with shift of x axis values
 						if(position.getOperation().equalsIgnoreCase("date"))
 						{
 							if(sText.length() > 0){
@@ -272,6 +276,7 @@ public class PDFBuilder {
 							 }
 							}
 						}
+						// splitting the textArea value and writing on pdf with shift of y axis values
 						else if (position.getOperation().equalsIgnoreCase("textarea"))
 						{
 							if(sText.length() > 0)
@@ -314,6 +319,38 @@ public class PDFBuilder {
 							}
 								
 							
+						}
+						else if(position.getOperation().equalsIgnoreCase("multiline")){
+							if(sText.length() > 0){
+								
+							  Integer splitValue = Integer.parseInt(position.getBreakPoint());
+							  if(splitValue.intValue() < sText.length()){
+							  String subText = sText.substring(0,splitValue);
+							  char ch = subText.charAt(splitValue - 1);
+							  int k = splitValue;
+							  if(!(Character.isWhitespace(ch))){
+								  while(!(Character.isWhitespace(subText.charAt(k - 1))))
+								  {
+									  k = k-1;
+								  }}
+							  contentStream.beginText();
+							  contentStream.newLineAtOffset(xOffset,yOffset); // coordinates of the new text
+							  contentStream.showText(sText.substring(0,k)); 
+							  contentStream.endText();
+							  
+							  contentStream.beginText();
+							  contentStream.newLineAtOffset(75,yOffset - 15); // coordinates of the new text
+							  contentStream.showText(sText.substring(k,sText.length())); 
+							  contentStream.endText();
+							  }
+							  else
+							  {
+								  contentStream.beginText();
+								  contentStream.newLineAtOffset(xOffset,yOffset); // coordinates of the new text
+								  contentStream.showText(sText); 
+								  contentStream.endText();
+							  }
+							  }
 						}
 						else
 						{
